@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Personal Website</title>
+<style>
+:root{--bg:#fff;--fg:#202124;--accent:#7c3aed;--panel:#fff;--line:#e5e7eb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;transition:background .2s,color .2s}
+body[data-theme="ocean"]{--bg:#eaf8ff;--fg:#10344a;--accent:#087ea4;--panel:#fff;--line:#b8e4f4}
+body[data-theme="sunset"]{--bg:#fff1e8;--fg:#532d24;--accent:#e45d38;--panel:#fffaf7;--line:#f2c8b6}
+body[data-theme="forest"]{--bg:#edf8ee;--fg:#1d3b2b;--accent:#26834a;--panel:#fbfffb;--line:#c6e5cb}
+body[data-theme="berry"]{--bg:#fff0f7;--fg:#4a1f3a;--accent:#c02678;--panel:#fffaff;--line:#f0c4dd}
+body[data-theme="midnight"]{--bg:#111827;--fg:#f3f4f6;--accent:#a78bfa;--panel:#1f2937;--line:#374151}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:9px 13px;background:var(--accent);color:white;font-weight:600}button.secondary{background:transparent;color:var(--fg);border:1px solid var(--line)}button.danger{background:#b91c1c}
+.topbar{height:64px;display:flex;align-items:center;justify-content:flex-end;padding:0 18px;position:sticky;top:0;z-index:10;pointer-events:none}.settings-wrap{position:relative;pointer-events:auto}
+.settings-button{background:var(--panel);color:var(--fg);border:1px solid var(--line);box-shadow:0 3px 15px #0000000a}
+.menu{display:none;position:absolute;right:0;top:48px;width:230px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 14px 35px #0002;z-index:20}.menu.open{display:block}.menu button{width:100%;margin:4px 0;text-align:left}
+#theme-options{display:none;padding:7px 0}#theme-options.open{display:block}.theme-choice{display:flex;align-items:center;gap:9px;width:100%;background:transparent;color:var(--fg);border:1px solid transparent}.theme-choice:hover{border-color:var(--line)}.swatch{width:18px;height:18px;border-radius:50%;display:inline-block;border:1px solid #0002}
+main{min-height:calc(100vh - 64px);position:relative;overflow:hidden;padding:20px}
+#canvas{position:relative;min-height:calc(100vh - 110px);border:1px dashed transparent;border-radius:12px}
+#canvas.editing{border-color:var(--line)}
+.element{position:absolute;min-width:60px;max-width:95%;padding:5px;touch-action:pan-y;cursor:move;white-space:pre-wrap;overflow-wrap:anywhere}
+.element.selected{outline:2px solid var(--accent);outline-offset:2px}
+.element img,.element video{display:block;max-width:100%;height:auto;border-radius:8px}.element video{background:#000}.element audio{max-width:100%}
+#editor{display:none;position:fixed;inset:0;z-index:50;background:#0007;align-items:stretch;justify-content:flex-end}
+#editor.open{display:flex}.editor-panel{width:min(430px,100%);height:100%;overflow:auto;background:var(--panel);color:var(--fg);padding:18px;border-left:1px solid var(--line);box-shadow:-10px 0 40px #0002}
+.editor-head{display:flex;justify-content:space-between;align-items:center;gap:10px}.editor-panel h2{margin:5px 0 14px}.editor-panel h3{margin:22px 0 8px;font-size:1rem}.field{display:grid;gap:5px;margin:10px 0}.field label{font-size:.88rem;font-weight:650}.field input,.field select,.field textarea{width:100%;padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}.hint{font-size:.82rem;opacity:.75;line-height:1.4}.divider{height:1px;background:var(--line);margin:16px 0}.status{font-size:.84rem;margin-top:8px;overflow-wrap:anywhere}.hidden{display:none!important}
+@media(max-width:560px){main{padding:10px}.editor-panel{padding:14px}}
+</style>
+</head>
+<body data-theme="plain">
+<header class="topbar"><div class="settings-wrap">
+<button class="settings-button" id="settingsBtn" aria-expanded="false">⚙ Settings</button>
+<div class="menu" id="settingsMenu">
+<button class="secondary" id="themeBtn">🎨 Theme</button><div id="theme-options">
+<button class="theme-choice" data-theme="ocean"><span class="swatch" style="background:#087ea4"></span> Ocean blue</button>
+<button class="theme-choice" data-theme="sunset"><span class="swatch" style="background:#e45d38"></span> Sunset orange</button>
+<button class="theme-choice" data-theme="forest"><span class="swatch" style="background:#26834a"></span> Forest green</button>
+<button class="theme-choice" data-theme="berry"><span class="swatch" style="background:#c02678"></span> Berry pink</button>
+<button class="theme-choice" data-theme="midnight"><span class="swatch" style="background:#a78bfa"></span> Midnight purple</button>
+</div><button id="adminBtn">🔐 Administrator</button>
+</div></div></header>
+<main><div id="canvas" aria-label="Website content area"></div></main>
+<div id="pinModal" style="display:none;position:fixed;inset:0;background:#0007;z-index:60;align-items:center;justify-content:center;padding:18px">
+<form id="pinForm" style="background:var(--panel);color:var(--fg);padding:24px;border-radius:16px;width:min(360px,100%);box-shadow:0 15px 50px #0003">
+<h2 style="margin-top:0">Administrator access</h2><p class="hint">Enter the 6-digit administrator PIN.</p>
+<div class="field"><label for="pin">PIN</label><input id="pin" type="password" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off" required></div>
+<div class="row"><button type="submit">Unlock</button><button type="button" class="secondary" id="cancelPin">Cancel</button></div><p id="pinError" class="status" style="color:#dc2626"></p>
+</form></div>
+<div id="editor"><aside class="editor-panel">
+<div class="editor-head"><h2>Website editor</h2><button class="secondary" id="closeEditor">✕</button></div>
+<p class="hint">Edit or drag items, then press “Publish website to GitHub” to update the actual website source. Upload media first, then publish. GitHub Pages changes may take a short time to appear.</p>
+<div class="row"><button id="addText">＋ Add text</button><button id="uploadBtn">＋ Upload media</button></div>
+<input id="fileInput" type="file" accept="image/*,video/*,audio/*,.pdf,.txt" multiple class="hidden">
+<div class="field"><label for="contentText">Selected text</label><textarea id="contentText" rows="3" placeholder="Select a text element to edit it"></textarea></div>
+<div class="row"><div class="field"><label for="fontSize">Text size (px)</label><input id="fontSize" type="number" min="8" max="160" value="24"></div><div class="field"><label for="textColor">Text color</label><input id="textColor" type="color" value="#202124"></div></div>
+<div class="row"><div class="field"><label for="elemWidth">Width (px)</label><input id="elemWidth" type="number" min="60" max="2000" value="300"></div><div class="field"><label for="elemHeight">Height (px)</label><input id="elemHeight" type="number" min="0" max="2000" value="0"></div></div>
+<div class="row"><div class="field"><label for="posX">Position X</label><input id="posX" type="number" min="0" value="20"></div><div class="field"><label for="posY">Position Y</label><input id="posY" type="number" min="0" value="20"></div></div>
+<div class="field"><label for="align">Text alignment</label><select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></div>
+<div class="row"><button id="applyChanges">Apply changes</button><button class="danger" id="deleteElement">Delete selected</button></div>
+<div class="divider"></div><h3>Publish the actual website</h3>
+<p class="hint">This updates <code>index.html</code> in your GitHub repository and uploads new media into <code>assets/</code>. Create a fine-grained token restricted to this repository with Contents: Read and write. The token is not saved. Never share this page while a token is filled in.</p>
+<div class="field"><label for="repoOwner">GitHub username / organization</label><input id="repoOwner" placeholder="your-username"></div>
+<div class="field"><label for="repoName">Repository name</label><input id="repoName" placeholder="personal-website"></div>
+<div class="field"><label for="repoBranch">Branch</label><input id="repoBranch" value="main"></div>
+<div class="field"><label for="githubToken">GitHub token (not stored)</label><input id="githubToken" type="password" autocomplete="off" placeholder="github_pat_..."></div>
+<button id="publishSite" style="width:100%">Publish website to GitHub</button><p id="githubStatus" class="status" role="status"></p>
+<div class="divider"></div><div class="row"><button class="secondary" id="exportLayout">Export layout JSON</button><button class="secondary" id="resetLayout">Reset page</button></div>
+<p class="hint"><strong>Security:</strong> The PIN is visible in source code and is only a convenience gate. The GitHub token is powerful; use a fine-grained token for this one repository and revoke it after use if appropriate. For true administrator security, use a backend.</p>
+</aside></div>
+<script>
+(() => {
+const $=id=>document.getElementById(id),canvas=$('canvas'),menu=$('settingsMenu'),themeOptions=$('theme-options');
+let selected=null,unlocked=false,pendingFiles=[],assetPaths={};
+const themes=['plain','ocean','sunset','forest','berry','midnight'];
+function setTheme(t){if(!themes.includes(t))return;document.body.dataset.theme=t;localStorage.setItem('personalSiteTheme',t)}
+setTheme(localStorage.getItem('personalSiteTheme')||'plain');
+$('settingsBtn').onclick=()=>{menu.classList.toggle('open');$('settingsBtn').setAttribute('aria-expanded',menu.classList.contains('open'))};
+$('themeBtn').onclick=()=>themeOptions.classList.toggle('open');
+document.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>{setTheme(b.dataset.theme);menu.classList.remove('open');themeOptions.classList.remove('open')});
+$('adminBtn').onclick=()=>{menu.classList.remove('open');$('pinModal').style.display='flex';$('pin').value='';$('pinError').textContent='';$('pin').focus()};
+$('cancelPin').onclick=()=>$('pinModal').style.display='none';
+$('pinForm').onsubmit=e=>{e.preventDefault();if($('pin').value==='544692'){unlocked=true;$('pinModal').style.display='none';$('editor').classList.add('open');canvas.classList.add('editing');renderSelection()}else $('pinError').textContent='Incorrect PIN. Try again.'};
+$('closeEditor').onclick=()=>{$('editor').classList.remove('open');canvas.classList.remove('editing');selected?.classList.remove('selected');selected=null;saveLocal()};
+function makeId(){return 'el-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)}
+function addText(text='Double-click to edit this text'){const el=document.createElement('div');el.className='element';el.dataset.id=makeId();el.dataset.kind='text';el.textContent=text;el.style.cssText='left:20px;top:20px;width:300px;font-size:24px;color:var(--fg);text-align:left';canvas.append(el);select(el);saveLocal()}
+$('addText').onclick=()=>addText();
+function select(el){selected?.classList.remove('selected');selected=el;el.classList.add('selected');renderSelection()}
+canvas.addEventListener('pointerdown',e=>{if(!unlocked)return;const el=e.target.closest('.element');if(!el)return;select(el);const startX=e.clientX,startY=e.clientY,left=parseFloat(el.style.left)||0,top=parseFloat(el.style.top)||0;let moved=false;const move=ev=>{if(Math.abs(ev.clientX-startX)+Math.abs(ev.clientY-startY)>3)moved=true;el.style.left=Math.max(0,left+ev.clientX-startX)+'px';el.style.top=Math.max(0,top+ev.clientY-startY)+'px';renderSelection()};const up=()=>{el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',up);if(moved)saveLocal()};el.addEventListener('pointermove',move);el.addEventListener('pointerup',up)});
+canvas.addEventListener('click',e=>{if(unlocked){const el=e.target.closest('.element');if(el)select(el)}});
+canvas.addEventListener('dblclick',e=>{if(!unlocked)return;const el=e.target.closest('.element');if(el?.dataset.kind==='text'){select(el);$('contentText').focus()}});
+function toHex(rgb){const m=rgb.match(/\d+/g);return m&&m.length>=3?'#'+m.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join(''):'#202124'}
+function renderSelection(){const el=selected;if(!el)return;const isText=el.dataset.kind==='text';$('contentText').value=isText?el.textContent:'';$('contentText').disabled=!isText;$('fontSize').value=parseInt(el.style.fontSize)||24;$('textColor').value=toHex(getComputedStyle(el).color);$('elemWidth').value=Math.round(el.getBoundingClientRect().width)||300;$('elemHeight').value=parseInt(el.style.height)||0;$('posX').value=parseInt(el.style.left)||0;$('posY').value=parseInt(el.style.top)||0;$('align').value=el.style.textAlign||'left'}
+$('applyChanges').onclick=()=>{if(!selected)return;const el=selected;if(el.dataset.kind==='text')el.textContent=$('contentText').value;el.style.fontSize=Math.max(8,Math.min(160,+$('fontSize').value||24))+'px';el.style.color=$('textColor').value;el.style.width=Math.max(60,+$('elemWidth').value||300)+'px';el.style.height=(+$('elemHeight').value>0?+$('elemHeight').value+'px':'auto');el.style.left=Math.max(0,+$('posX').value||0)+'px';el.style.top=Math.max(0,+$('posY').value||0)+'px';el.style.textAlign=$('align').value;saveLocal();renderSelection()};
+$('deleteElement').onclick=()=>{if(!selected)return;selected.remove();selected=null;renderSelection();saveLocal()};
+$('uploadBtn').onclick=()=>$('fileInput').click();
+$('fileInput').onchange=async e=>{for(const file of e.target.files){const id=makeId();pendingFiles.push({id,file});let el=document.createElement('div');if(file.type.startsWith('image/')){const img=document.createElement('img');img.alt=file.name;img.src=URL.createObjectURL(file);el.append(img)}else if(file.type.startsWith('video/')){const v=document.createElement('video');v.controls=true;v.src=URL.createObjectURL(file);el.append(v)}else if(file.type.startsWith('audio/')){const a=document.createElement('audio');a.controls=true;a.src=URL.createObjectURL(file);el.append(a)}else{const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=file.name;a.textContent='📄 '+file.name;a.style.color='var(--accent)';el.append(a)}el.className='element';el.dataset.id=id;el.dataset.kind='media';el.dataset.filename=file.name;el.dataset.mime=file.type;el.style.cssText='left:20px;top:20px;width:320px';canvas.append(el);select(el)}e.target.value='';saveLocal()};
+function snapshot(){return {version:2,theme:document.body.dataset.theme,elements:[...canvas.querySelectorAll('.element')].map(el=>({id:el.dataset.id,kind:el.dataset.kind,text:el.dataset.kind==='text'?el.textContent:'',filename:el.dataset.filename||'',mime:el.dataset.mime||'',assetPath:assetPaths[el.dataset.id]||'',style:{left:el.style.left,top:el.style.top,width:el.style.width,height:el.style.height,fontSize:el.style.fontSize,color:el.style.color,textAlign:el.style.textAlign}}))}}
+function saveLocal(){try{localStorage.setItem('personalSiteLayout',JSON.stringify(snapshot()))}catch(e){}}
+function restore(){try{const data=JSON.parse(localStorage.getItem('personalSiteLayout')||'null');if(!data||!Array.isArray(data.elements))return;setTheme(data.theme||'plain');data.elements.forEach(item=>{const el=document.createElement('div');el.className='element';el.dataset.id=item.id||makeId();el.dataset.kind=item.kind||'text';Object.assign(el.style,item.style||{});if(item.kind==='text')el.textContent=item.text||'';else{el.dataset.filename=item.filename||'';el.dataset.mime=item.mime||'';assetPaths[el.dataset.id]=item.assetPath||'';if(item.assetPath){const url='./'+item.assetPath,type=item.mime||'';if(type.startsWith('image/')){const img=document.createElement('img');img.src=url;img.alt=item.filename||'';el.append(img)}else if(type.startsWith('video/')){const v=document.createElement('video');v.controls=true;v.src=url;el.append(v)}else{const a=document.createElement('a');a.href=url;a.textContent='📎 '+(item.filename||'Open file');a.style.color='var(--accent)';el.append(a)}}else el.textContent='📎 '+(item.filename||'Media')+' (publish to include it)'}canvas.append(el)})}catch(e){console.warn(e)}}
+restore();
+function b64bytes(bytes){let binary='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));return btoa(binary)}
+async function fileB64(file){return b64bytes(new Uint8Array(await file.arrayBuffer()))}
+function cfg(){const owner=$('repoOwner').value.trim(),repo=$('repoName').value.trim(),branch=$('repoBranch').value.trim()||'main',token=$('githubToken').value.trim();if(!owner||!repo||!token)throw Error('Enter GitHub owner, repository, and token.');return {owner,repo,branch,token}}
+async function putFile(c,path,content,message){const url=`https://api.github.com/repos/${c.owner}/${c.repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;let sha;const check=await fetch(url,{headers:{Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});if(check.ok)sha=(await check.json()).sha;else if(check.status!==404)throw Error('GitHub read failed '+check.status+': '+(await check.text()).slice(0,180));const body={message,content,branch:c.branch};if(sha)body.sha=sha;const res=await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+c.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok)throw Error('GitHub write failed '+res.status+': '+(await res.text()).slice(0,260));return await res.json()}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function safeStyle(s){return `left:${s.left||'20px'};top:${s.top||'20px'};width:${s.width||'300px'};height:${s.height||'auto'};font-size:${s.fontSize||'24px'};color:${s.color||'var(--fg)'};text-align:${s.textAlign||'left'}`}
+function buildPublishedHTML(data){
+ const theme=data.theme||'plain';
+ const body=data.elements.map(el=>{const st=safeStyle(el.style||{});if(el.kind==='text')return `<div class="element" style="${st}">${escapeHTML(el.text||'')}</div>`;
+ const p=el.assetPath?'./'+el.assetPath:'';if(!p)return '';
+ const mime=el.mime||'',name=escapeHTML(el.filename||'file');
+ if(mime.startsWith('image/'))return `<div class="element" style="${st}"><img src="${p}" alt="${name}"></div>`;
+ if(mime.startsWith('video/'))return `<div class="element" style="${st}"><video src="${p}" controls></video></div>`;
+ if(mime.startsWith('audio/'))return `<div class="element" style="${st}"><audio src="${p}" controls></audio></div>`;
+ return `<div class="element" style="${st}"><a href="${p}">${name}</a></div>`;
+ }).join('\n');
+ return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Personal Website</title>
+<style>
+:root{--bg:#fff;--fg:#202124;--accent:#7c3aed;--line:#e5e7eb}
+body[data-theme="ocean"]{--bg:#eaf8ff;--fg:#10344a;--accent:#087ea4;--line:#b8e4f4}
+body[data-theme="sunset"]{--bg:#fff1e8;--fg:#532d24;--accent:#e45d38;--line:#f2c8b6}
+body[data-theme="forest"]{--bg:#edf8ee;--fg:#1d3b2b;--accent:#26834a;--line:#c6e5cb}
+body[data-theme="berry"]{--bg:#fff0f7;--fg:#4a1f3a;--accent:#c02678;--line:#f0c4dd}
+body[data-theme="midnight"]{--bg:#111827;--fg:#f3f4f6;--accent:#a78bfa;--line:#374151}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+.topbar{height:64px;display:flex;align-items:center;justify-content:flex-end;padding:0 18px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:9px 13px;background:transparent;color:var(--fg)}
+.menu{display:none;position:absolute;right:18px;top:55px;z-index:3;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:200px}.menu.open{display:block}.menu button{display:block;width:100%;margin:3px 0;text-align:left}
+main{position:relative;padding:20px;min-height:calc(100vh - 64px);overflow:hidden}#canvas{position:relative;min-height:calc(100vh - 110px)}.element{position:absolute;min-width:60px;max-width:95%;padding:5px;white-space:pre-wrap;overflow-wrap:anywhere}.element img,.element video{display:block;max-width:100%;height:auto;border-radius:8px}.element audio{max-width:100%}
+</style></head><body data-theme="${theme}"><header class="topbar"><button id="settings">⚙ Settings</button><div class="menu" id="menu"><strong>Theme</strong>${themes.filter(t=>t!=='plain').map(t=>`<button data-theme-choice="${t}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div></header><main><div id="canvas">${body}</div></main>
+<script>const m=document.getElementById('menu');document.getElementById('settings').onclick=()=>m.classList.toggle('open');document.querySelectorAll('[data-theme-choice]').forEach(b=>b.onclick=()=>document.body.dataset.theme=b.dataset.themeChoice);<\\/script></body></html>`;
+}
+$('publishSite').onclick=async()=>{const status=$('githubStatus');try{const c=cfg();status.textContent='Step 1/2: uploading new media…';for(const item of pendingFiles){const safe=item.file.name.replace(/[^a-zA-Z0-9._-]/g,'_');const path='assets/'+Date.now()+'-'+safe;await putFile(c,path,await fileB64(item.file),'Upload website asset: '+safe);assetPaths[item.id]=path;const el=canvas.querySelector('[data-id="'+item.id+'"]');if(el){el.dataset.filename=item.file.name;el.dataset.mime=item.file.type;const media=el.querySelector('img,video,audio');if(media)media.src='./'+path;else{const a=el.querySelector('a');if(a)a.href='./'+path}}}pendingFiles=[];const data=snapshot();status.textContent='Step 2/2: generating and updating index.html…';const source=buildPublishedHTML(data);await putFile(c,'index.html',await fileB64(new Blob([source],{type:'text/html;charset=utf-8'})),'Publish website content and layout');status.textContent='Published! index.html and uploaded media have been updated in your GitHub repository. GitHub Pages may take a few minutes to refresh.';saveLocal()}catch(err){status.textContent=err.message}};
+$('exportLayout').onclick=()=>{const blob=new Blob([JSON.stringify(snapshot(),null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='layout.json';a.click();URL.revokeObjectURL(a.href)};
+$('resetLayout').onclick=()=>{if(!confirm('Remove all page content from this browser? This will not delete files already committed to GitHub.'))return;canvas.innerHTML='';selected=null;assetPaths={};pendingFiles=[];saveLocal();renderSelection()};
+})();
+</script></body></html>
